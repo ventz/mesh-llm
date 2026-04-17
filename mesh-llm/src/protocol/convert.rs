@@ -757,6 +757,10 @@ pub(crate) fn proto_config_to_mesh(
         gpu: GpuConfig { assignment },
         models,
         plugins,
+        // NodeConfigSnapshot does not carry MoE storage settings today; the
+        // per-node config loaded locally provides them. A future protocol
+        // bump can add an explicit moe field.
+        moe: Default::default(),
     }
 }
 

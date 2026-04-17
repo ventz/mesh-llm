@@ -4658,6 +4658,7 @@ async fn config_subscribe_rejects_pinned_snapshot_for_older_peer() -> Result<()>
                     gpu_id: Some("pci:0000:65:00.0".into()),
                 }],
                 plugins: vec![],
+                moe: Default::default(),
             },
             expected_revision,
         );
@@ -4754,6 +4755,7 @@ async fn config_subscribe_rejects_pinned_snapshot_for_malformed_peer_version() -
                     gpu_id: Some("pci:0000:65:00.0".into()),
                 }],
                 plugins: vec![],
+                moe: Default::default(),
             },
             expected_revision,
         );
@@ -4848,6 +4850,7 @@ async fn config_subscribe_allows_pinned_snapshot_for_same_release_prerelease_pee
                     gpu_id: Some("pci:0000:65:00.0".into()),
                 }],
                 plugins: vec![],
+                moe: Default::default(),
             },
             expected_revision,
         );
@@ -5021,6 +5024,7 @@ async fn config_subscribe_closes_when_revision_becomes_pinned_for_malformed_peer
                     gpu_id: Some("pci:0000:65:00.0".into()),
                 }],
                 plugins: vec![],
+                moe: Default::default(),
             },
             expected_revision,
         );
@@ -5119,6 +5123,7 @@ async fn config_subscribe_closes_when_revision_becomes_pinned_for_older_peer() -
                     gpu_id: Some("pci:0000:65:00.0".into()),
                 }],
                 plugins: vec![],
+                moe: Default::default(),
             },
             expected_revision,
         );
@@ -5218,6 +5223,7 @@ async fn config_subscribe_keeps_stream_open_when_revision_becomes_pinned_for_sam
                     gpu_id: Some("pci:0000:65:00.0".into()),
                 }],
                 plugins: vec![],
+                moe: Default::default(),
             },
             expected_revision,
         );

@@ -1910,6 +1910,7 @@ mod tests {
                 command: Some("mesh-llm".to_string()),
                 args: vec!["--plugin".to_string()],
             }],
+            moe: Default::default(),
         };
         let snapshot = mesh_config_to_proto(&config);
         let restored = proto_config_to_mesh(&snapshot);
@@ -1953,6 +1954,7 @@ mod tests {
                 gpu_id: None,
             }],
             plugins: vec![],
+            moe: Default::default(),
         };
         let snap1 = mesh_config_to_proto(&config);
         let snap2 = mesh_config_to_proto(&config);
@@ -1972,6 +1974,7 @@ mod tests {
                 gpu_id: None,
             }],
             plugins: vec![],
+            moe: Default::default(),
         };
         let snap3 = mesh_config_to_proto(&config2);
         let h3 = canonical_config_hash(&snap3);
@@ -1994,6 +1997,7 @@ mod tests {
                 gpu_id: Some("pci:0000:65:00.0".to_string()),
             }],
             plugins: vec![],
+            moe: Default::default(),
         };
 
         let snapshot = mesh_config_to_proto(&config);
