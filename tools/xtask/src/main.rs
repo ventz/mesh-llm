@@ -21,7 +21,11 @@ fn run() -> DynResult<()> {
         [command, scope] if command == "repo-consistency" && scope == "release-targets" => {
             check_release_targets()
         }
-        _ => Err(format!("usage: cargo run -p xtask -- repo-consistency release-targets").into()),
+        _ => Err(
+            "usage: cargo run -p xtask -- repo-consistency release-targets"
+                .to_string()
+                .into(),
+        ),
     }
 }
 
@@ -76,6 +80,7 @@ fn fixture_rows(repo_root: &Path) -> DynResult<Vec<FixtureRow>> {
 
 fn fixture_path(repo_root: &Path) -> PathBuf {
     repo_root
+        .join("crates")
         .join("mesh-llm")
         .join("tests")
         .join("fixtures")
