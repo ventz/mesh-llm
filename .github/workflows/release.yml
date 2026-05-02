@@ -630,7 +630,7 @@ jobs:
 
   publish:
     name: Publish GitHub release
-    if: ${{ always() && needs.prepare_release.result == 'success' && needs.build.result == 'success' && needs.build_linux_arm64.result == 'success' && needs.inference_smoke_tests.result == 'success' && (needs.build_linux_cuda.result == 'success' || needs.build_linux_cuda.result == 'skipped') && (needs.build_linux_rocm.result == 'success' || needs.build_linux_rocm.result == 'skipped') && (needs.build_linux_vulkan.result == 'success' || needs.build_linux_vulkan.result == 'skipped') }}
+    if: ${{ always() && needs.prepare_release.result == 'success' && needs.build.result == 'success' && needs.build_linux_arm64.result == 'success' && needs.inference_smoke_tests.result == 'success' && (needs.build_linux_cuda.result == 'success' || needs.build_linux_cuda.result == 'skipped') && (needs.build_linux_cuda_blackwell.result == 'success' || needs.build_linux_cuda_blackwell.result == 'skipped') && (needs.build_linux_rocm.result == 'success' || needs.build_linux_rocm.result == 'skipped') && (needs.build_linux_vulkan.result == 'success' || needs.build_linux_vulkan.result == 'skipped') }}
     runs-on: ubuntu-latest
     needs:
       - prepare_release

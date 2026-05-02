@@ -59,8 +59,17 @@ function Normalize-RecipeArgument {
 function Get-ReleaseFlavor {
     param([string]$RequestedFlavor)
 
+    # Normalize aliases in the outer archive flavor so release-archive
+    # naming stays stable (e.g. "hip" is an alias for "rocm" and must
+    # produce a -rocm.zip outer archive, not -hip.zip). cuda-blackwell
+    # is intentionally NOT normalized here because the outer archive
+    # name does differ between the cuda and cuda-blackwell lanes; only
+    # the inner binary suffix collapses (see Get-BinaryFlavor).
     if ($RequestedFlavor) {
-        return $RequestedFlavor.ToLowerInvariant()
+        switch ($RequestedFlavor.ToLowerInvariant()) {
+            "hip" { return "rocm" }
+            default { return $RequestedFlavor.ToLowerInvariant() }
+        }
     }
 
     return "cpu"
