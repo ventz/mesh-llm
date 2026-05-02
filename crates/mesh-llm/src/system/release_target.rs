@@ -114,13 +114,11 @@ impl ReleaseTarget {
             (CanonicalOs::Macos, CanonicalArch::Aarch64, BinaryFlavor::Metal)
             | (CanonicalOs::Linux, CanonicalArch::X86_64, BinaryFlavor::Cpu)
             | (CanonicalOs::Linux, CanonicalArch::X86_64, BinaryFlavor::Cuda)
-            | (CanonicalOs::Linux, CanonicalArch::X86_64, BinaryFlavor::CudaBlackwell)
             | (CanonicalOs::Linux, CanonicalArch::X86_64, BinaryFlavor::Rocm)
             | (CanonicalOs::Linux, CanonicalArch::X86_64, BinaryFlavor::Vulkan)
             | (CanonicalOs::Linux, CanonicalArch::Aarch64, BinaryFlavor::Cpu)
             | (CanonicalOs::Windows, CanonicalArch::X86_64, BinaryFlavor::Cpu)
             | (CanonicalOs::Windows, CanonicalArch::X86_64, BinaryFlavor::Cuda)
-            | (CanonicalOs::Windows, CanonicalArch::X86_64, BinaryFlavor::CudaBlackwell)
             | (CanonicalOs::Windows, CanonicalArch::X86_64, BinaryFlavor::Rocm)
             | (CanonicalOs::Windows, CanonicalArch::X86_64, BinaryFlavor::Vulkan) => {
                 SupportStatus::Supported
@@ -166,7 +164,6 @@ impl ReleaseTarget {
         let flavor_suffix = match self.flavor {
             BinaryFlavor::Cpu | BinaryFlavor::Metal => "",
             BinaryFlavor::Cuda => "-cuda",
-            BinaryFlavor::CudaBlackwell => "-cuda-blackwell",
             BinaryFlavor::Rocm => "-rocm",
             BinaryFlavor::Vulkan => "-vulkan",
         };
@@ -204,14 +201,22 @@ mod tests {
         serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
     }
 
-    fn flavor(name: &str) -> BinaryFlavor {
+    // cuda-blackwell is a release-archive flavor only: the outer tarball
+    // is named -cuda-blackwell, but the inner binaries keep the -cuda
+    // suffix and the runtime BinaryFlavor stays at the five variants
+    // (cpu/cuda/rocm/vulkan/metal). See docs/cuda-release-lanes.md and
+    // scripts/package-release.sh::binary_flavor_for_release_flavor.
+    // Asset-name rendering for cuda-blackwell rows is exercised by
+    // tools/xtask via scripts/package-release.sh (Linux/macOS) and
+    // check_windows_name_invariance (Windows), not via this library.
+    fn flavor(name: &str) -> Option<BinaryFlavor> {
         match name {
-            "cpu" => BinaryFlavor::Cpu,
-            "cuda" => BinaryFlavor::Cuda,
-            "cuda-blackwell" => BinaryFlavor::CudaBlackwell,
-            "rocm" => BinaryFlavor::Rocm,
-            "vulkan" => BinaryFlavor::Vulkan,
-            "metal" => BinaryFlavor::Metal,
+            "cpu" => Some(BinaryFlavor::Cpu),
+            "cuda" => Some(BinaryFlavor::Cuda),
+            "cuda-blackwell" => None,
+            "rocm" => Some(BinaryFlavor::Rocm),
+            "vulkan" => Some(BinaryFlavor::Vulkan),
+            "metal" => Some(BinaryFlavor::Metal),
             other => panic!("unknown fixture flavor: {other}"),
         }
     }
@@ -219,7 +224,10 @@ mod tests {
     #[test]
     fn release_target_renders_stable_assets() {
         for row in fixture_rows() {
-            let target = ReleaseTarget::from_raw(&row.os, &row.arch, flavor(&row.flavor)).unwrap();
+            let Some(flavor) = flavor(&row.flavor) else {
+                continue;
+            };
+            let target = ReleaseTarget::from_raw(&row.os, &row.arch, flavor).unwrap();
             assert_eq!(
                 target.stable_asset_name(),
                 row.stable_asset,
@@ -234,7 +242,10 @@ mod tests {
     #[test]
     fn release_target_renders_versioned_assets() {
         for row in fixture_rows() {
-            let target = ReleaseTarget::from_raw(&row.os, &row.arch, flavor(&row.flavor)).unwrap();
+            let Some(flavor) = flavor(&row.flavor) else {
+                continue;
+            };
+            let target = ReleaseTarget::from_raw(&row.os, &row.arch, flavor).unwrap();
             assert_eq!(
                 target.versioned_asset_name(FIXTURE_RELEASE_TAG),
                 row.versioned_asset,
@@ -308,7 +319,10 @@ mod tests {
     #[test]
     fn release_target_round_trips_fixture_matrix() {
         for row in fixture_rows() {
-            let target = ReleaseTarget::from_raw(&row.os, &row.arch, flavor(&row.flavor)).unwrap();
+            let Some(flavor) = flavor(&row.flavor) else {
+                continue;
+            };
+            let target = ReleaseTarget::from_raw(&row.os, &row.arch, flavor).unwrap();
             assert_eq!(
                 target.arch,
                 CanonicalArch::parse(&row.arch).unwrap(),
@@ -318,12 +332,9 @@ mod tests {
                 row.flavor
             );
             assert_eq!(
-                target.flavor,
-                flavor(&row.flavor),
+                target.flavor, flavor,
                 "flavor mismatch for {} {} {}",
-                row.os,
-                row.arch,
-                row.flavor
+                row.os, row.arch, row.flavor
             );
 
             let expected_support = match row.support.as_str() {

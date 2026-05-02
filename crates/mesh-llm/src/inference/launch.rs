@@ -42,17 +42,15 @@ impl SplitMode {
 pub enum BinaryFlavor {
     Cpu,
     Cuda,
-    CudaBlackwell,
     Rocm,
     Vulkan,
     Metal,
 }
 
 impl BinaryFlavor {
-    pub const ALL: [BinaryFlavor; 6] = [
+    pub const ALL: [BinaryFlavor; 5] = [
         BinaryFlavor::Cpu,
         BinaryFlavor::Cuda,
-        BinaryFlavor::CudaBlackwell,
         BinaryFlavor::Rocm,
         BinaryFlavor::Vulkan,
         BinaryFlavor::Metal,
@@ -62,7 +60,6 @@ impl BinaryFlavor {
         match self {
             BinaryFlavor::Cpu => "cpu",
             BinaryFlavor::Cuda => "cuda",
-            BinaryFlavor::CudaBlackwell => "cuda-blackwell",
             BinaryFlavor::Rocm => "rocm",
             BinaryFlavor::Vulkan => "vulkan",
             BinaryFlavor::Metal => "metal",
@@ -72,7 +69,7 @@ impl BinaryFlavor {
     fn preferred_devices(self) -> &'static [&'static str] {
         match self {
             BinaryFlavor::Cpu => &["CPU"],
-            BinaryFlavor::Cuda | BinaryFlavor::CudaBlackwell => &["CUDA0", "CPU"],
+            BinaryFlavor::Cuda => &["CUDA0", "CPU"],
             BinaryFlavor::Rocm => &["ROCm0", "HIP0", "CPU"],
             BinaryFlavor::Vulkan => &["Vulkan0", "CPU"],
             BinaryFlavor::Metal => &["MTL0", "CPU"],
