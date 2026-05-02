@@ -65,6 +65,11 @@ Release workflows own shipping artifacts and release gating.
 - Build the full release artifact set here, not in ordinary PR CI.
 - Produce Linux inference binaries for downstream release smoke testing.
 - Keep `publish` gated on successful release smoke tests.
+- CUDA ships as two parallel release lanes (`-cuda` on CUDA 12.6.3 for
+  R535-era drivers, `-cuda-blackwell` on CUDA 12.8 for Blackwell
+  hardware). See [`cuda-release-lanes.md`](cuda-release-lanes.md) for
+  the toolkit / arch / driver matrix and the rationale for keeping them
+  separate.
 
 ## Artifact handoff rules
 
