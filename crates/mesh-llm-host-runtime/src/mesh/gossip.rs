@@ -736,7 +736,11 @@ impl Node {
         };
         let my_first_joined_mesh_ts = *self.first_joined_mesh_ts.lock().await;
         announcements.push(PeerAnnouncement {
-            addr: self.endpoint.addr(),
+            addr: {
+                let mut a = self.endpoint.addr();
+                super::filter_endpoint_addr(&mut a);
+                a
+            },
             role: my_role,
             first_joined_mesh_ts: my_first_joined_mesh_ts,
             models: my_models,

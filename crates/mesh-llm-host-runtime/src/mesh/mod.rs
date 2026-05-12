@@ -84,6 +84,70 @@ fn quic_bind_addr(bind_port: Option<u16>) -> Option<std::net::SocketAddr> {
     }
 }
 
+// CIDR-based filter for advertised iroh transport addresses.
+//
+// When `MESH_LLM_ADVERTISE_CIDRS` is set to a comma-separated list of IPv4 CIDRs
+// (e.g. `10.100.3.0/24,10.100.16.0/24`), only IP addresses falling within those
+// CIDRs are kept in the EndpointAddr we publish to peers. Relay-style transport
+// addresses are always preserved. Empty/unset env var means no filtering
+// (backwards compatible).
+//
+// Use case: clusters where the host has multiple kernel-visible network
+// interfaces (e.g. docker bridges on 172.x) but only one routable mgmt network
+// — iroh's default direct-address enumeration advertises all of them, and
+// peers' dials to the docker-bridge IPs land on the *dialing peer's* own
+// identically-numbered bridge instead of the remote, breaking heartbeats.
+pub(super) fn filter_endpoint_addr(addr: &mut iroh::EndpointAddr) {
+    let cidr_list = match std::env::var("MESH_LLM_ADVERTISE_CIDRS") {
+        Ok(s) if !s.trim().is_empty() => s,
+        _ => return,
+    };
+    let cidrs: Vec<(u32, u32)> = cidr_list
+        .split(',')
+        .filter_map(|s| parse_v4_cidr(s.trim()))
+        .collect();
+    if cidrs.is_empty() {
+        tracing::warn!(
+            "MESH_LLM_ADVERTISE_CIDRS set but no valid CIDR parsed; advertising unfiltered"
+        );
+        return;
+    }
+    let before = addr.addrs.len();
+    addr.addrs.retain(|a| match a {
+        iroh::TransportAddr::Ip(sock) => match sock.ip() {
+            std::net::IpAddr::V4(v4) => ipv4_in_cidrs(v4, &cidrs),
+            std::net::IpAddr::V6(_) => false,
+        },
+        _ => true,
+    });
+    let after = addr.addrs.len();
+    if before != after {
+        tracing::debug!(
+            "filter_endpoint_addr: kept {after}/{before} addrs after CIDR filter"
+        );
+    }
+}
+
+fn parse_v4_cidr(s: &str) -> Option<(u32, u32)> {
+    let (ip, prefix) = s.split_once('/')?;
+    let prefix: u8 = prefix.parse().ok()?;
+    if prefix > 32 {
+        return None;
+    }
+    let ip: std::net::Ipv4Addr = ip.parse().ok()?;
+    let mask = if prefix == 0 {
+        0
+    } else {
+        u32::MAX << (32 - prefix)
+    };
+    Some((u32::from(ip) & mask, mask))
+}
+
+fn ipv4_in_cidrs(ip: std::net::Ipv4Addr, cidrs: &[(u32, u32)]) -> bool {
+    let n = u32::from(ip);
+    cidrs.iter().any(|(net, mask)| (n & mask) == *net)
+}
+
 fn config_uses_pinned_gpu(config: &crate::plugin::MeshConfig) -> bool {
     config.gpu.assignment == crate::plugin::GpuAssignment::Pinned
 }
@@ -2560,6 +2624,7 @@ impl Node {
 
     pub fn invite_token(&self) -> String {
         let mut addr = self.endpoint.addr();
+        filter_endpoint_addr(&mut addr);
         // Inject STUN-discovered public address if relay STUN didn't provide one.
         if let Some(pub_addr) = self.public_addr {
             use iroh::TransportAddr;
